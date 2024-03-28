@@ -22,10 +22,20 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(CourseNotFoundException.class)
-    public final ResponseEntity<ExceptionResponse> handleProductNotFoundException(CourseNotFoundException productNotFoundException,
+    public final ResponseEntity<ExceptionResponse> handleProductNotFoundException(CourseNotFoundException courseNotFoundException,
                                                                                   WebRequest request) {
         ExceptionResponse exceptionResponse = new ExceptionResponse(LocalDateTime.now(),
-                productNotFoundException.getMessage(),
+                courseNotFoundException.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AlbumNotFoundException.class)
+    public final ResponseEntity<ExceptionResponse> handleProductNotFoundException(AlbumNotFoundException albumNotFoundException,
+                                                                                  WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(LocalDateTime.now(),
+                albumNotFoundException.getMessage(),
                 request.getDescription(false));
 
         return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);
