@@ -15,27 +15,17 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<ExceptionResponse> handleAllExceptions(Exception exception,
                                                                        WebRequest request) {
-        ExceptionResponse exceptionResponse = new ExceptionResponse(LocalDateTime.now(), exception.getMessage(),
+        var exceptionResponse = new ExceptionResponse(LocalDateTime.now(), exception.getMessage(),
                 request.getDescription(false));
 
         return new ResponseEntity<>(exceptionResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(CourseNotFoundException.class)
-    public final ResponseEntity<ExceptionResponse> handleProductNotFoundException(CourseNotFoundException courseNotFoundException,
-                                                                                  WebRequest request) {
-        ExceptionResponse exceptionResponse = new ExceptionResponse(LocalDateTime.now(),
-                courseNotFoundException.getMessage(),
-                request.getDescription(false));
-
-        return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(AlbumNotFoundException.class)
-    public final ResponseEntity<ExceptionResponse> handleProductNotFoundException(AlbumNotFoundException albumNotFoundException,
-                                                                                  WebRequest request) {
-        ExceptionResponse exceptionResponse = new ExceptionResponse(LocalDateTime.now(),
-                albumNotFoundException.getMessage(),
+    @ExceptionHandler(NotFoundException.class)
+    public final ResponseEntity<ExceptionResponse> handleNotFoundException(NotFoundException notFoundException,
+                                                                           WebRequest request) {
+        var exceptionResponse = new ExceptionResponse(LocalDateTime.now(),
+                notFoundException.getMessage(),
                 request.getDescription(false));
 
         return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);

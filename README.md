@@ -148,7 +148,6 @@ Let's create CourseController class define the all the endpoints
 ```java
 package com.springapp.springbootappwithpostgres.controller;
 
-import com.springapp.springbootappwithpostgres.exception.CourseNotFoundException;
 import com.springapp.springbootappwithpostgres.model.Course;
 import com.springapp.springbootappwithpostgres.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;

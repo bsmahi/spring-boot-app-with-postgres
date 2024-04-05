@@ -1,8 +1,0 @@
-package com.springapp.springbootappwithpostgres.exception;
-
-public class CourseNotFoundException extends RuntimeException {
-
-    public CourseNotFoundException(String message) {
-        super(message);
-    }
-}

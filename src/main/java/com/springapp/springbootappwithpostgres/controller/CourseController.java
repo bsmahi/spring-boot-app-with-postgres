@@ -1,6 +1,6 @@
 package com.springapp.springbootappwithpostgres.controller;
 
-import com.springapp.springbootappwithpostgres.exception.CourseNotFoundException;
+import com.springapp.springbootappwithpostgres.exception.NotFoundException;
 import com.springapp.springbootappwithpostgres.model.Course;
 import com.springapp.springbootappwithpostgres.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +30,7 @@ public class CourseController {
         Optional<List<Course>> courses = service.findAll();
 
         return courses.map(courseDetails -> new ResponseEntity<>(courseDetails, HttpStatus.OK))
-                .orElseThrow(() -> new CourseNotFoundException("No Courses are available.."));
+                .orElseThrow(() -> new NotFoundException("No Courses are available.."));
     }
 
     // http://localhost:8080/api/courses/course-titles?title=boot
@@ -40,7 +40,7 @@ public class CourseController {
         Optional<List<Course>> courses = service.findByTitleContaining(title);
 
         return courses.map(courseDetails -> new ResponseEntity<>(courseDetails, HttpStatus.OK))
-                .orElseThrow(() -> new CourseNotFoundException("No Courses are available.."));
+                .orElseThrow(() -> new NotFoundException("No Courses are available.."));
     }
 
     // http://localhost:8080/api/courses/1
@@ -50,7 +50,7 @@ public class CourseController {
         Optional<Course> course = service.findById(id);
 
         return course.map(courseOne -> new ResponseEntity<>(courseOne, HttpStatus.OK))
-                .orElseThrow(() -> new CourseNotFoundException("No Courses are available.."));
+                .orElseThrow(() -> new NotFoundException("No Courses are available.."));
 
     }
 

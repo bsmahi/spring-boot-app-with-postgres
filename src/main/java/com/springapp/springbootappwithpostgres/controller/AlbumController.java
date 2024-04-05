@@ -1,7 +1,7 @@
 package com.springapp.springbootappwithpostgres.controller;
 
 import com.springapp.springbootappwithpostgres.dto.AlbumDto;
-import com.springapp.springbootappwithpostgres.exception.AlbumNotFoundException;
+import com.springapp.springbootappwithpostgres.exception.NotFoundException;
 import com.springapp.springbootappwithpostgres.model.AlbumInfo;
 import com.springapp.springbootappwithpostgres.service.AlbumInfoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +42,7 @@ public class AlbumController {
         Optional<List<AlbumInfo>> albums = service.getAllAlbums();
 
         return albums.map(albumsDetails -> new ResponseEntity<>(albumsDetails, HttpStatus.OK))
-                .orElseThrow(() -> new AlbumNotFoundException("No Albums are available.."));
+                .orElseThrow(() -> new NotFoundException("No Albums are available.."));
     }
 
     @GetMapping("/{name}")
@@ -51,7 +51,7 @@ public class AlbumController {
         Optional<AlbumInfo> albumInfo = service.getAlbumInfoByName(name);
 
         return albumInfo.map(albumInfoDetails -> new ResponseEntity<>(albumInfoDetails, HttpStatus.OK))
-                .orElseThrow(() -> new AlbumNotFoundException("No Courses are available.."));
+                .orElseThrow(() -> new NotFoundException("No Details are available.."));
 
     }
 
