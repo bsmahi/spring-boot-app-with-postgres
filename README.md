@@ -1,27 +1,25 @@
 # Spring Boot Rest API with PostgreSQL
 
-We will build a Spring Boot JPA Rest CRUD API for a Course application in that:
+We will build a Spring Boot JPA REST API for courses and album information:
 
-- Each Course has id, title, description, published status
-- All the Api's help to perform create, retrieve, update, delete Courses
-- We have also defined custom query method to retrieve details based on the title and published
+- Courses have an id, title, description, and published status, with CRUD operations and title search.
+- Album records have an id, name, description, price, and automatically managed creation/update timestamps.
 
 ## Technologies Used
 
-- Java 25
+- Java 25 runtime (Docker image); Maven compiler target is Java 17
 - Spring Boot 4.1.1
 - Maven 3.9.11 (Docker image)
 - Spring Modules Covered: Spring Boot Web, Spring Data Jpa, Spring Actuator, OpenAPI
-- Database: PostgresSQL
+- Database: PostgreSQL (Supabase for the local profile; local PostgreSQL is also available with Docker Compose)
 - Build Tool: Maven
 
-The Docker image uses `maven:3.9.11-eclipse-temurin-25-alpine`, which provides Maven 3.9.11 and Eclipse Temurin JDK 25 on Alpine Linux. Spring Boot 4.1.1 is configured as the project parent in `pom.xml`.
+The Docker image uses `maven:3.9.11-eclipse-temurin-25-alpine`, which provides Maven 3.9.11 and Eclipse Temurin JDK 25 on Alpine Linux. Spring Boot 4.1.1 is configured as the project parent in `pom.xml`. The Maven compiler target is controlled separately by `java.version` in that file.
 
-We will develop a Course application by creating a Spring Boot JPA Rest CRUD API.
+The application provides REST endpoints for courses and albums, backed by PostgreSQL through Spring Data JPA.
 
-- Each Course has id, title, description, published status.
-- Apis help to create, retrieve, update, delete Tutorials.
-- Apis also support custom finder methods such as find by published status or by title.
+- Course endpoints support create, retrieve, update, and delete operations, plus title search.
+- Album endpoints support album creation, listing, exact-name lookup, and case-insensitive name search.
 
 These are APIs that we need to provide:
 
@@ -41,7 +39,8 @@ These are APIs that we need to provide:
 
 Let me explain it briefly
 
-- `Course.java` data model class corresponds to entity and table courses
+- `Course.java` maps to the `courses` table
+- `AlbumInfo.java` maps to `album_info_details`
 - `CourseRepository.java` the interface extends JpaRepository for CRUD methods and custom finder methods. It will be
   autowired in CourseController
 - `CourseController.java` the class where we will define all endpoints as a presentation layer
@@ -55,13 +54,15 @@ click [here](https://start.spring.io/#!type=maven-project&language=java&platform
 
 ## Configure Spring Datasource, JPA, Hibernate
 
+The datasource is PostgreSQL. The application uses the `app` schema and Hibernate updates its mapped tables on startup.
+
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
-# Replace username and password for your system
-spring.datasource.username=postgres
-spring.datasource.password=sairam123
+spring.datasource.url=jdbc:postgresql://<pooler-host>:5432/postgres
+spring.datasource.username=postgres.<project-ref>
+spring.datasource.password=<password>
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.default_schema=app
 # Hibernate ddl auto (create, create-drop, validate, update)
 spring.jpa.hibernate.ddl-auto=update
 #Turn Statistics on
@@ -72,10 +73,50 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 ```
 
+## Connect to Supabase
+
+This project uses [Supabase](https://supabase.com) as its hosted PostgreSQL provider. Supabase provides a managed PostgreSQL database and related services such as authentication, storage, and realtime capabilities. For this application, Spring Boot connects to Supabase's PostgreSQL database through the standard PostgreSQL JDBC driver, so the existing Spring Data JPA repositories and entities can continue to work with PostgreSQL.
+
+### Benefits and when to use Supabase
+
+- Use a hosted database without provisioning and maintaining your own PostgreSQL server.
+- Connect to the same cloud database from local development, deployed applications, or multiple team environments.
+- Start with PostgreSQL and add Supabase services such as authentication, storage, or realtime updates if the application needs them.
+- Supabase can be a good fit for prototypes, MVPs, and applications that need a managed PostgreSQL database and want to reduce infrastructure setup.
+
+Use local PostgreSQL instead when you need fully offline development or want to manage the database infrastructure yourself. For production, review Supabase plan limits, backups, network access, and database security requirements for your workload.
+
+### Create a Supabase project and database
+
+1. Sign in at [supabase.com](https://supabase.com) and create an organization if prompted.
+2. Select **New project**, choose the organization, and enter a project name, a strong database password, and a region near the application.
+3. Create the project and wait for its database to finish provisioning. Supabase creates a PostgreSQL database with a default `postgres` database.
+4. In the project dashboard, select **Connect**. For local development on an IPv4 network, choose **Session pooler** and copy its connection details. The session pooler is suitable for this long-running Spring Boot application when a direct IPv6 connection is unavailable. Use the host, port, database name, and username exactly as shown; pooled usernames include the project reference.
+
+![Supabase connection pooling illustration from the official documentation](https://supabase.com/docs/img/guides/database/connecting-to-postgres/how-connection-pooling-works.png)
+
+```sh
+export SPRING_DATASOURCE_URL='jdbc:postgresql://<pooler-host>:5432/postgres'
+export SPRING_DATASOURCE_USERNAME='postgres.<project-ref>'
+export SPRING_DATASOURCE_PASSWORD='<database-password>'
+./mvnw spring-boot:run
+```
+
+Set these environment variables in the same shell before launching the application. Alternatively, configure the equivalent `spring.datasource.*` properties in `application-local.properties`, but keep real credentials out of source control. The `local` profile is enabled by `application.properties`.
+
+### Create the application tables
+
+This project uses the PostgreSQL schema `app`, with the `courses` and `album_info_details` tables. In the Supabase dashboard, open **SQL Editor**, create a query, paste the contents of [`src/main/resources/schema.sql`](src/main/resources/schema.sql), and run it. To add the sample records, run [`src/main/resources/data.sql`](src/main/resources/data.sql) afterward. The scripts are safe to run again for their included schema, tables, sequences, and sample data.
+
+![Supabase Table Editor showing the table creation workflow (official Supabase documentation screenshot)](https://supabase.com/docs/img/database/managing-tables/creating-tables.png)
+
+The project initializes its tables from SQL scripts so that both tables are created under the `app` schema. The screenshot illustrates the Supabase table creation interface; for this project's schema and tables, use SQL Editor and the scripts above.
+
+For connection modes and where to find the database connection details, see [Supabase: Connect to your database](https://supabase.com/docs/guides/database/connecting-to-postgres).
+
 ## Define Course Entity
 
-Our Data model is Course with four fields: id, title, description, published.
-In model package, we define Course class.
+The `Course` entity maps to the `courses` table. Its primary key is generated by the database using the identity strategy.
 
 ```java
 package com.springapp.springbootappwithpostgres.model;
@@ -93,7 +134,7 @@ import lombok.RequiredArgsConstructor;
 public class Course {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column(name = "title")
@@ -110,9 +151,77 @@ public class Course {
 - `@Entity` annotation indicates that the class is a persistent Java class
 - `@Table` annotation provides the table that maps this entity
 - `@Id` annotation is for the primary key
-- `@GeneratedValue` annotation is used to define generation strategy for the primary key. `GenerationType.AUTO` means
-  Auto Increment field
+- `@GeneratedValue` annotation defines how the primary key is generated. `GenerationType.IDENTITY` uses the database identity column.
 - `@Column` annotation is used to define the column in database that maps annotated field
+
+## Define AlbumInfo Entity
+
+`AlbumInfo` maps to the `album_info_details` table. It stores album names, descriptions, and prices. Its ID uses a database sequence; Hibernate manages the creation and update timestamps.
+
+```java
+package com.springapp.springbootappwithpostgres.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "album_info_details")
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
+@NamedQuery(
+    name = "AlbumInfo.findByNameIgnoreCaseContaining",
+    query = "select a from AlbumInfo a where LOWER(a.name) LIKE LOWER(?1)"
+)
+public class AlbumInfo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = "album_id")
+    private long id;
+
+    @Column(name = "album_name")
+    private String name;
+
+    @Column(name = "album_description")
+    private String description;
+
+    @Column(name = "album_price")
+    private BigDecimal price;
+
+    @CreationTimestamp
+    private LocalDateTime dateCreated;
+
+    @UpdateTimestamp
+    private LocalDateTime lastUpdated;
+}
+```
+
+The album endpoints are rooted at `/api/albums`:
+
+| HTTP Method | URL | Description |
+|:-----------:|:----|:------------|
+| POST | `/api/albums` | Create an album |
+| GET | `/api/albums` | List albums |
+| GET | `/api/albums/{name}` | Find an album by exact name |
+| GET | `/api/albums/all/{names}` | Search album names, ignoring case |
+
+Album creation accepts a JSON body with `name`, `description`, and `price`, for example:
+
+```json
+{
+  "name": "Java 25 Masterclass",
+  "description": "A guide to modern Java",
+  "price": 49.99
+}
+```
 
 ## CourseRepository
 
@@ -292,9 +401,9 @@ Run Spring Boot application with command: `mvn spring-boot:run`
 
 ## Create Dockerfile for Spring Boot App
 
-Create .Dockerfile in the root folder
+The root `Dockerfile` builds and runs the application with Java 25:
 
-```properties
+```dockerfile
 FROM maven:3.9.11-eclipse-temurin-25-alpine
 WORKDIR /spring-boot-app-with-postgres
 COPY . .
@@ -302,7 +411,7 @@ RUN mvn clean install -DskipTests
 CMD mvn spring-boot:run
 ```
 
-This image provides Java 25 for building and running the application. The Maven build skips tests in the Docker image; run tests separately with `mvn test`.
+This image provides Java 25 for building and running the application. The Maven build skips tests in the Docker image; run tests separately with `./mvnw test`.
 
 - FROM: install the image of the Maven – JDK version.
 - WORKDIR: path of the working directory.
@@ -311,9 +420,9 @@ This image provides Java 25 for building and running the application. The Maven 
   in `pom.xml`.
 - CMD: run script `mvn spring-boot:run` after the image is built.
 
-## Write Docker Compose configurations
+## Run with Docker Compose
 
-On the root of the project directory, we'll create thecompose.yml file.
+The repository's `compose.yaml` starts the Spring Boot app and a local PostgreSQL 15 container.
 
 Follow version 3 syntax defined by Docker:
 
@@ -329,7 +438,7 @@ services:
 `version`: Docker Compose file format version will be used.
 `services`: individual services in isolated containers.
 
-Our application has two services: `course-app` (Spring Boot) and `postgres_db` (POSTGRES database).
+The Compose configuration has two services: `course-app` (Spring Boot) and `postgres_db` (PostgreSQL).
 
 Here go with the complete docker compose file
 
@@ -383,11 +492,11 @@ Now we will create it.
 
 ### _.env_
 
-> _**NOTE: REPLACE USERNAME AND PASSWORD AS PER YOUR NEED**_
+Use your own local database credentials. Do not commit `.env`.
 
 ```properties
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=sairam123
+POSTGRES_PASSWORD=<local-database-password>
 POSTGRES_DB=postgres
 POSTGRES_DB_LOCAL_PORT=5432
 POSTGRES_DB_DOCKER_PORT=5432
@@ -395,19 +504,13 @@ SPRING_LOCAL_PORT=8080
 SPRING_DOCKER_PORT=8080
 ```
 
-## Run the Spring Boot microservice with Docker Compose
+Compose passes the local PostgreSQL connection to the app, overriding the Supabase datasource settings from the `local` profile. Start the services with:
 
-> NOTE: Before executing the Docker Compose command, it is imperative to initiate the Docker Desktop software.**
+```sh
+docker compose up --build
+```
 
-To spin up the containers for both course-app and postgres database, execute the docker compose command given below.
-
-> docker compose up
-
-Docker will pull the postgres and Maven images (if our machine does not have it before).
-
-The services can be run in the background with the command:
-
-> docker compose up -d
+Stop them with `docker compose down`.
 
 The following is example output from an earlier build; image versions, IDs, and timings may differ:
 
