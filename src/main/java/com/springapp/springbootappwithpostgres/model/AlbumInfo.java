@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @RequiredArgsConstructor
 @AllArgsConstructor
-@NamedQuery(name = "AlbumInfo.findByNameIgnoreCaseContaining", query = "select a from AlbumInfo a where a.name LIKE ?1")
+@NamedQuery(name = "AlbumInfo.findByNameIgnoreCaseContaining", query = "select a from AlbumInfo a where LOWER(a.name) LIKE LOWER(?1)")
 public class AlbumInfo {
 
     @Id

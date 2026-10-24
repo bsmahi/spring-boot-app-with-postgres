@@ -1,4 +1,4 @@
-# Spring Boot Rest API with PostgresSQL
+# Spring Boot Rest API with PostgreSQL
 
 We will build a Spring Boot JPA Rest CRUD API for a Course application in that:
 
@@ -8,11 +8,14 @@ We will build a Spring Boot JPA Rest CRUD API for a Course application in that:
 
 ## Technologies Used
 
-- Java 17
-- Spring Boot 3.1.x
+- Java 25
+- Spring Boot 4.1.1
+- Maven 3.9.11 (Docker image)
 - Spring Modules Covered: Spring Boot Web, Spring Data Jpa, Spring Actuator, OpenAPI
 - Database: PostgresSQL
 - Build Tool: Maven
+
+The Docker image uses `maven:3.9.11-eclipse-temurin-25-alpine`, which provides Maven 3.9.11 and Eclipse Temurin JDK 25 on Alpine Linux. Spring Boot 4.1.1 is configured as the project parent in `pom.xml`.
 
 We will develop a Course application by creating a Spring Boot JPA Rest CRUD API.
 
@@ -47,8 +50,8 @@ Let me explain it briefly
 
 ## Create Spring Boot Project
 
-For pre-initialized project using Spring Initializer, please
-click [here](https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.1.5&packaging=jar&jvmVersion=17&groupId=com.springapp&artifactId=spring-boot-app-with-postgres&name=spring-boot-app-with-postgres&description=Demo%20project%20for%20Spring%20Boot&packageName=com.springapp.spring-boot-app-with-postgres&dependencies=web,data-jpa,lombok,actuator,postgresql)
+For pre-initialized project using Spring Initializr, please
+click [here](https://start.spring.io/#!type=maven-project&language=java&platformVersion=4.1.1&packaging=jar&jvmVersion=25&groupId=com.springapp&artifactId=spring-boot-app-with-postgres&name=spring-boot-app-with-postgres&description=Demo%20project%20for%20Spring%20Boot&packageName=com.springapp.spring-boot-app-with-postgres&dependencies=web,data-jpa,lombok,actuator,postgresql)
 
 ## Configure Spring Datasource, JPA, Hibernate
 
@@ -292,12 +295,14 @@ Run Spring Boot application with command: `mvn spring-boot:run`
 Create .Dockerfile in the root folder
 
 ```properties
-FROM maven:3.8.5-openjdk-17
+FROM maven:3.9.11-eclipse-temurin-25-alpine
 WORKDIR /spring-boot-app-with-postgres
 COPY . .
 RUN mvn clean install -DskipTests
 CMD mvn spring-boot:run
 ```
+
+This image provides Java 25 for building and running the application. The Maven build skips tests in the Docker image; run tests separately with `mvn test`.
 
 - FROM: install the image of the Maven – JDK version.
 - WORKDIR: path of the working directory.
@@ -400,9 +405,11 @@ To spin up the containers for both course-app and postgres database, execute the
 
 Docker will pull the postgres and Maven images (if our machine does not have it before).
 
-The services can be run on the background with command:
+The services can be run in the background with the command:
 
 > docker compose up -d
+
+The following is example output from an earlier build; image versions, IDs, and timings may differ:
 
 ```logsyaml
 puneethsai@Puneeths-MacBook-Pro spring-boot-app-with-postgres % docker compose up -d

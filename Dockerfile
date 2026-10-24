@@ -1,4 +1,4 @@
-FROM maven:3.8.5-openjdk-17
+FROM maven:3.9.11-eclipse-temurin-25-alpine
 
 WORKDIR /spring-boot-app-with-postgres
 COPY . .

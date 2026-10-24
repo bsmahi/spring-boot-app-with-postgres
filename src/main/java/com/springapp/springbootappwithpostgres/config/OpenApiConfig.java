@@ -15,7 +15,8 @@ public class OpenApiConfig {
                 .info(new Info().title("Course API")
                         .description("Course Service API")
                         .version("1.0")
-                        .license(new License().name("Apache 2.0").url("http://www.apache.org/licenses/LICENSE-2.0")))
+                        .license(new License().name("Apache 2.0")
+                                .url("http://www.apache.org/licenses/LICENSE-2.0")))
                 .externalDocs(new ExternalDocumentation()
                         .description("LearnSpringApp, learnspringapp@gmail.com")
                         .url("http://www.learnspring.com"));
