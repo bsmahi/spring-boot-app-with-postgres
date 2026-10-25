@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627" fill="none">
+  <defs>
+    <linearGradient id="background" x1="72" y1="40" x2="1128" y2="598" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101B2D"/>
+      <stop offset="1" stop-color="#07111D"/>
+    </linearGradient>
+    <linearGradient id="green" x1="794" y1="144" x2="1038" y2="505" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6EE7A8"/>
+      <stop offset="1" stop-color="#26B77A"/>
+    </linearGradient>
+    <linearGradient id="card" x1="732" y1="146" x2="1080" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B2A3C"/>
+      <stop offset="1" stop-color="#132235"/>
+    </linearGradient>
+    <filter id="glow" x="670" y="45" width="590" height="590" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="58"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="627" rx="28" fill="url(#background)"/>
+  <circle cx="969" cy="331" r="195" fill="#24C47A" fill-opacity=".2" filter="url(#glow)"/>
+  <path d="M0 521C212 455 363 480 531 627H0V521Z" fill="#14243A" fill-opacity=".58"/>
+  <path d="M1200 0H834C943 77 1075 88 1200 44V0Z" fill="#14243A" fill-opacity=".5"/>
+
+  <g opacity=".19" stroke="#87A0B9">
+    <path d="M0 100H1200M0 200H1200M0 300H1200M0 400H1200M0 500H1200"/>
+    <path d="M100 0V627M200 0V627M300 0V627M400 0V627M500 0V627M600 0V627M700 0V627M800 0V627M900 0V627M1000 0V627M1100 0V627"/>
+  </g>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="78" y="87" width="205" height="34" rx="17" fill="#1B3440" stroke="#35634F"/>
+    <circle cx="98" cy="104" r="5" fill="#5CE09B"/>
+    <text x="113" y="109" fill="#BCEBD0" font-size="13" font-weight="700" letter-spacing="1.7">PROJECT EXPERIMENT</text>
+
+    <text x="78" y="196" fill="#F4F8FC" font-size="53" font-weight="750" letter-spacing="-1.7">Building with</text>
+    <text x="78" y="258" fill="#65E3A0" font-size="59" font-weight="750" letter-spacing="-1.8">Supabase</text>
+    <text x="80" y="311" fill="#D4DFEA" font-size="25" font-weight="500">Spring Boot × PostgreSQL</text>
+
+    <text x="80" y="365" fill="#A8B8C9" font-size="18">Exploring managed Postgres with a</text>
+    <text x="80" y="392" fill="#A8B8C9" font-size="18">Java REST API—one project at a time.</text>
+
+    <rect x="78" y="445" width="321" height="48" rx="24" fill="#14273A" stroke="#30475D"/>
+    <text x="101" y="475" fill="#E3ECF5" font-size="15" font-weight="600">JAVA</text>
+    <circle cx="157" cy="469" r="3" fill="#61D99B"/>
+    <text x="173" y="475" fill="#E3ECF5" font-size="15" font-weight="600">SPRING DATA JPA</text>
+    <circle cx="318" cy="469" r="3" fill="#61D99B"/>
+    <text x="333" y="475" fill="#E3ECF5" font-size="15" font-weight="600">SQL</text>
+
+    <text x="80" y="565" fill="#8295A9" font-size="14" letter-spacing=".5">LEARNING BY BUILDING</text>
+  </g>
+
+  <g>
+    <rect x="704" y="128" width="423" height="375" rx="25" fill="#07111D" fill-opacity=".45"/>
+    <rect x="719" y="112" width="423" height="375" rx="25" fill="url(#card)" stroke="#34495D"/>
+    <circle cx="748" cy="140" r="5" fill="#5FE09D"/>
+    <circle cx="766" cy="140" r="5" fill="#60768D"/>
+    <circle cx="784" cy="140" r="5" fill="#60768D"/>
+    <text x="820" y="146" fill="#A9BBCD" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600">APPLICATION → DATABASE</text>
+
+    <rect x="760" y="180" width="341" height="111" rx="16" fill="#162A3E" stroke="#3A5268"/>
+    <rect x="781" y="201" width="45" height="45" rx="12" fill="#224539"/>
+    <path d="M803 209L794 224L803 224L799 238L814 219L805 219L809 209H803Z" fill="#6FE7A5"/>
+    <text x="843" y="216" fill="#EAF1F7" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Spring Boot API</text>
+    <text x="843" y="240" fill="#9FB1C3" font-family="Inter, Arial, sans-serif" font-size="13">REST endpoints · Spring Data JPA</text>
+    <rect x="843" y="256" width="72" height="20" rx="10" fill="#213A4D"/>
+    <text x="856" y="270" fill="#B5C9D9" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="700">COURSES</text>
+    <rect x="923" y="256" width="63" height="20" rx="10" fill="#213A4D"/>
+    <text x="936" y="270" fill="#B5C9D9" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="700">ALBUMS</text>
+
+    <path d="M930 295V329" stroke="#66DFA0" stroke-width="2.5" stroke-dasharray="5 6"/>
+    <path d="M924 322L930 330L936 322" stroke="#66DFA0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="760" y="339" width="341" height="112" rx="16" fill="#14283A" stroke="#3A5268"/>
+    <ellipse cx="813" cy="371" rx="24" ry="9" fill="url(#green)"/>
+    <path d="M789 371V407C789 412 800 416 813 416C826 416 837 412 837 407V371" fill="url(#green)"/>
+    <ellipse cx="813" cy="407" rx="24" ry="9" fill="#29B879"/>
+    <path d="M789 384C789 389 800 393 813 393C826 393 837 389 837 384M789 396C789 401 800 405 813 405C826 405 837 401 837 396" stroke="#D4F8E3" stroke-opacity=".72" stroke-width="2"/>
+    <text x="859" y="380" fill="#EAF1F7" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Supabase</text>
+    <text x="859" y="404" fill="#9FB1C3" font-family="Inter, Arial, sans-serif" font-size="13">Managed PostgreSQL</text>
+    <rect x="859" y="417" width="83" height="20" rx="10" fill="#1B4338"/>
+    <text x="873" y="431" fill="#A9EDC7" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="700">APP SCHEMA</text>
+  </g>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600">
+    <rect x="941" y="530" width="186" height="35" rx="17.5" fill="#16273A" stroke="#2D455C"/>
+    <text x="965" y="552" fill="#B6C7D7">A HANDS-ON PROJECT</text>
+  </g>
+</svg>
