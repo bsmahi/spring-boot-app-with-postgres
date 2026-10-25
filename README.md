@@ -106,13 +106,16 @@ Set these environment variables in the same shell before launching the applicati
 
 ### Create the application tables
 
-This project uses the PostgreSQL schema `app`, with the `courses` and `album_info_details` tables. In the Supabase dashboard, open **SQL Editor**, create a query, paste the contents of [`src/main/resources/schema.sql`](src/main/resources/schema.sql), and run it. To add the sample records, run [`src/main/resources/data.sql`](src/main/resources/data.sql) afterward. The scripts are safe to run again for their included schema, tables, sequences, and sample data.
+This project stores its tables in the PostgreSQL schema `app`. In the Supabase dashboard, open **SQL Editor**, create a query, paste the contents of [`src/main/resources/schema.sql`](src/main/resources/schema.sql), and run it. To add the sample records, run [`src/main/resources/data.sql`](src/main/resources/data.sql) afterward. These scripts create the tables and sequence and can be run again safely.
 
-![Supabase Table Editor showing the table creation workflow (official Supabase documentation screenshot)](https://supabase.com/docs/img/database/managing-tables/creating-tables.png)
+The resulting table structure is shown below:
 
-The project initializes its tables from SQL scripts so that both tables are created under the `app` schema. The screenshot illustrates the Supabase table creation interface; for this project's schema and tables, use SQL Editor and the scripts above.
+| Schema | Table | Columns |
+|:---|:---|:---|
+| `app` | `courses` | `id` (bigint, primary key), `title` (text), `description` (text), `published` (boolean) |
+| `app` | `album_info_details` | `album_id` (bigint, primary key), `album_name` (text), `album_description` (text), `album_price` (numeric), `date_created` (timestamp), `last_updated` (timestamp) |
 
-For connection modes and where to find the database connection details, see [Supabase: Connect to your database](https://supabase.com/docs/guides/database/connecting-to-postgres).
+In Supabase, you can confirm the tables under **Table Editor** by selecting the `app` schema. For connection modes and where to find the database connection details, see [Supabase: Connect to your database](https://supabase.com/docs/guides/database/connecting-to-postgres).
 
 ## Define Course Entity
 
