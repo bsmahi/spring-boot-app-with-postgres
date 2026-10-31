@@ -565,54 +565,7 @@ The following steps use Docker Desktop Kubernetes. Adapt the cluster context and
 
 The diagram shows both the **delivery flow** (how code and configuration reach the cluster) and the **runtime request flow** (how a user request reaches the API and database). The Argo CD Application is bootstrapped into the cluster once; after that, Argo CD continuously reconciles the Kubernetes manifests from Git.
 
-```mermaid
-flowchart TB
-    Dev[Developer]
-    Source[Spring Boot source]
-    DockerBuild[Build container image]
-    GitOpsFiles["Git repository<br/>master branch<br/>k8s/app.yaml + argocd/application.yaml"]
-    GHCR["GitHub Container Registry<br/>ghcr.io/...:tag"]
-
-    Dev -->|1. edit and test| Source
-    Source -->|2. docker build| DockerBuild
-    DockerBuild -->|3. docker push| GHCR
-    Dev -->|4. commit and push manifests| GitOpsFiles
-
-    subgraph Cluster["Kubernetes cluster"]
-        direction TB
-        Bootstrap["kubectl apply -f argocd/application.yaml<br/>(one-time bootstrap)"]
-        ArgoApp["Argo CD Application<br/>watches master / k8s"]
-        RepoServer["Argo CD repo-server<br/>fetches and renders Git manifests"]
-        Controller["Argo CD application controller<br/>compares desired and live state"]
-        KubeAPI[Kubernetes API server]
-        Deployment["Deployment<br/>2 application replicas"]
-        Pods["Spring Boot pods<br/>REST API + Actuator"]
-        Service["ClusterIP Service<br/>stable in-cluster endpoint"]
-        Secret["Kubernetes Secret: spring-db<br/>datasource URL and credentials"]
-        Forward["kubectl port-forward<br/>localhost:8082 to Service:80"]
-
-        Bootstrap --> ArgoApp
-        ArgoApp --> Controller
-        Controller -->|request desired manifests| RepoServer
-        GitOpsFiles -->|Git fetch| RepoServer
-        RepoServer -->|rendered manifests| Controller
-        Controller -->|reconcile resources| KubeAPI
-        KubeAPI -->|creates and maintains| Deployment
-        Deployment -->|schedules replicas| Pods
-        KubeAPI -->|creates| Service
-        KubeAPI -->|Secret created separately| Secret
-        GHCR -->|image pull by cluster nodes| Pods
-        Service -->|routes to ready replicas| Pods
-        Forward -->|forwards local traffic| Service
-    end
-
-    User[User / API client]
-    Database["Managed PostgreSQL<br/>Supabase or another PostgreSQL service"]
-    User -->|HTTP request to localhost:8082| Forward
-    Pods -->|JDBC connection using spring-db| Database
-
-    GitOpsFiles -. "new commit or drift: reconcile again" .-> Controller
-```
+![End-to-end architecture: Spring Boot delivery with Argo CD, Kubernetes, GHCR, and PostgreSQL](images/argocd-kubernetes-architecture.svg)
 
 In this setup, `kubectl port-forward` is the development access path; it is not a public production endpoint. To expose the API publicly, add an Ingress or Gateway and configure DNS and TLS for your cluster.
 
