@@ -559,6 +559,15 @@ Using OpenAPI Documentation, we'll be able to access all the operations, please 
 
 This repository includes Kubernetes resources in [`k8s/app.yaml`](k8s/app.yaml) and an Argo CD Application in [`argocd/application.yaml`](argocd/application.yaml). Argo CD watches the `master` branch and automatically applies the manifests from `k8s/`. Commit and push manifest changes to that branch to roll them out.
 
+By default, Argo CD checks Git periodically. With the default reconciliation interval and jitter, a pushed commit is usually detected within about **2–3 minutes**; the interval can be changed by the Argo CD administrator. A GitHub webhook can trigger a faster refresh if Argo CD is reachable by GitHub and the webhook is configured. To request a refresh manually:
+
+```sh
+kubectl -n argocd annotate application spring-boot-app-with-postgres \
+  argocd.argoproj.io/refresh=hard --overwrite
+```
+
+This requests an immediate refresh; it does not change the regular polling interval. Automated sync then applies detected manifest changes according to the Application's sync policy.
+
 The following steps use Docker Desktop Kubernetes. Adapt the cluster context and PostgreSQL network access for another Kubernetes provider.
 
 ### End-to-end architecture
