@@ -7,14 +7,14 @@ We will build a Spring Boot JPA REST API for courses and album information:
 
 ## Technologies Used
 
-- Java 25 runtime (Docker image); Maven compiler target is Java 17
+- Java 25 (build and runtime)
 - Spring Boot 4.1.1
 - Maven 3.9.11 (Docker image)
 - Spring Modules Covered: Spring Boot Web, Spring Data Jpa, Spring Actuator, OpenAPI
 - Database: PostgreSQL (Supabase for the local profile; local PostgreSQL is also available with Docker Compose)
 - Build Tool: Maven
 
-The Docker image uses `maven:3.9.11-eclipse-temurin-25-alpine`, which provides Maven 3.9.11 and Eclipse Temurin JDK 25 on Alpine Linux. Spring Boot 4.1.1 is configured as the project parent in `pom.xml`. The Maven compiler target is controlled separately by `java.version` in that file.
+The Docker build uses Maven 3.9.11 and Eclipse Temurin 25 to compile the application; the runtime image contains the Java 25 JRE. Spring Boot 4.1.1 is configured as the project parent in `pom.xml`.
 
 The application provides REST endpoints for courses and albums, backed by PostgreSQL through Spring Data JPA.
 
@@ -402,26 +402,16 @@ Run Spring Boot application with command: `mvn spring-boot:run`
 }
 ```
 
-## Create Dockerfile for Spring Boot App
+## Create Docker Image for Spring Boot App
 
-The root `Dockerfile` builds and runs the application with Java 25:
+The root `Dockerfile` uses a multi-stage build: Maven and Java 25 compile the application, then a smaller Java 25 JRE image runs the executable JAR as a non-root user. Build and test locally with:
 
-```dockerfile
-FROM maven:3.9.11-eclipse-temurin-25-alpine
-WORKDIR /spring-boot-app-with-postgres
-COPY . .
-RUN mvn clean install -DskipTests
-CMD mvn spring-boot:run
+```sh
+./mvnw test
+docker build -t spring-boot-app-with-postgres:local .
 ```
 
-This image provides Java 25 for building and running the application. The Maven build skips tests in the Docker image; run tests separately with `./mvnw test`.
-
-- FROM: install the image of the Maven – JDK version.
-- WORKDIR: path of the working directory.
-- COPY: copy all the files inside the project directory to the container.
-- RUN: execute a command-line inside the container: mvn clean install -DskipTests to install the dependencies
-  in `pom.xml`.
-- CMD: run script `mvn spring-boot:run` after the image is built.
+The Docker build skips tests; run `./mvnw test` separately before publishing an image. The `.dockerignore` file excludes build output and local configuration from the image build context.
 
 ## Run with Docker Compose
 
@@ -564,3 +554,190 @@ Using OpenAPI Documentation, we'll be able to access all the operations, please 
 > http://localhost:8080/swagger-ui/index.html
 
 ![Image](./images/swagger.png "Swagger OpenAPI")
+
+## Deploy to Kubernetes with Argo CD (GitOps)
+
+This repository includes Kubernetes resources in [`k8s/app.yaml`](k8s/app.yaml) and an Argo CD Application in [`argocd/application.yaml`](argocd/application.yaml). Argo CD watches the `master` branch and automatically applies the manifests from `k8s/`. Commit and push manifest changes to that branch to roll them out.
+
+The following steps use Docker Desktop Kubernetes. Adapt the cluster context and PostgreSQL network access for another Kubernetes provider.
+
+### End-to-end architecture
+
+The diagram shows both the **delivery flow** (how code and configuration reach the cluster) and the **runtime request flow** (how a user request reaches the API and database). The Argo CD Application is bootstrapped into the cluster once; after that, Argo CD continuously reconciles the Kubernetes manifests from Git.
+
+```mermaid
+flowchart TB
+    Dev[Developer]
+    Source[Spring Boot source]
+    DockerBuild[Build container image]
+    GitOpsFiles["Git repository<br/>master branch<br/>k8s/app.yaml + argocd/application.yaml"]
+    GHCR["GitHub Container Registry<br/>ghcr.io/...:tag"]
+
+    Dev -->|1. edit and test| Source
+    Source -->|2. docker build| DockerBuild
+    DockerBuild -->|3. docker push| GHCR
+    Dev -->|4. commit and push manifests| GitOpsFiles
+
+    subgraph Cluster["Kubernetes cluster"]
+        direction TB
+        Bootstrap["kubectl apply -f argocd/application.yaml<br/>(one-time bootstrap)"]
+        ArgoApp["Argo CD Application<br/>watches master / k8s"]
+        RepoServer["Argo CD repo-server<br/>fetches and renders Git manifests"]
+        Controller["Argo CD application controller<br/>compares desired and live state"]
+        KubeAPI[Kubernetes API server]
+        Deployment["Deployment<br/>2 application replicas"]
+        Pods["Spring Boot pods<br/>REST API + Actuator"]
+        Service["ClusterIP Service<br/>stable in-cluster endpoint"]
+        Secret["Kubernetes Secret: spring-db<br/>datasource URL and credentials"]
+        Forward["kubectl port-forward<br/>localhost:8082 to Service:80"]
+
+        Bootstrap --> ArgoApp
+        ArgoApp --> Controller
+        Controller -->|request desired manifests| RepoServer
+        GitOpsFiles -->|Git fetch| RepoServer
+        RepoServer -->|rendered manifests| Controller
+        Controller -->|reconcile resources| KubeAPI
+        KubeAPI -->|creates and maintains| Deployment
+        Deployment -->|schedules replicas| Pods
+        KubeAPI -->|creates| Service
+        KubeAPI -->|Secret created separately| Secret
+        GHCR -->|image pull by cluster nodes| Pods
+        Service -->|routes to ready replicas| Pods
+        Forward -->|forwards local traffic| Service
+    end
+
+    User[User / API client]
+    Database["Managed PostgreSQL<br/>Supabase or another PostgreSQL service"]
+    User -->|HTTP request to localhost:8082| Forward
+    Pods -->|JDBC connection using spring-db| Database
+
+    GitOpsFiles -. "new commit or drift: reconcile again" .-> Controller
+```
+
+In this setup, `kubectl port-forward` is the development access path; it is not a public production endpoint. To expose the API publicly, add an Ingress or Gateway and configure DNS and TLS for your cluster.
+
+### What is Kubernetes, and why use it?
+
+Kubernetes is a platform for running and managing containerized applications across a cluster of machines. You describe the desired state of an application in resource manifests, and Kubernetes works to maintain that state. In this project, `k8s/app.yaml` declares:
+
+- A **Deployment**, which runs the application image and maintains two replicas.
+- A **Service**, which provides a stable in-cluster address for reaching those pods.
+- A **Namespace**, which groups the application's Kubernetes resources.
+
+Kubernetes monitors the application pods and can restart failed containers, replace unhealthy pods, and distribute traffic across replicas. This reduces the amount of manual container and process management needed compared with running the app directly on a single machine.
+
+### What is Argo CD, and why use it?
+
+Argo CD is a continuous-delivery tool for Kubernetes that follows the GitOps model. Git is the source of truth: the repository contains the desired Kubernetes configuration, and Argo CD compares it with the live cluster and reconciles differences. Here, `argocd/application.yaml` registers this repository, branch, and `k8s/` directory with Argo CD.
+
+Kubernetes runs and maintains the application; **Argo CD manages delivery of the application's Kubernetes configuration from Git**. This makes changes reviewable and repeatable: commit and push a manifest change, and Argo CD can deploy it automatically, report sync and health status, and restore the declared configuration if it drifts. Argo CD does not build or publish the container image; build and push the image first, then update its tag in the Kubernetes manifest.
+
+### Prerequisites
+
+- Docker Desktop with Kubernetes enabled, or another running Kubernetes cluster
+- `kubectl` configured for that cluster (`kubectl config current-context`)
+- Docker, Git, and a GitHub account with permission to publish packages
+- Argo CD installed in the cluster
+- A PostgreSQL database reachable from the cluster (this guide uses the project's existing Supabase option)
+
+### 1. Prepare PostgreSQL credentials
+
+Create the `app` schema and tables by running [`src/main/resources/schema.sql`](src/main/resources/schema.sql) against the database. For production, use a migration tool and apply database changes before deploying an application version that requires them.
+
+Create the namespace and datasource Secret before the application starts. The Secret is deliberately created outside Git; do not put real passwords in Kubernetes manifests or commit them:
+
+```sh
+kubectl create namespace spring-boot-app-with-postgres \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n spring-boot-app-with-postgres create secret generic spring-db \
+  --from-literal=SPRING_DATASOURCE_URL='jdbc:postgresql://<db-host>:<port>/<database>' \
+  --from-literal=SPRING_DATASOURCE_USERNAME='<db-username>' \
+  --from-literal=SPRING_DATASOURCE_PASSWORD='<db-password>'
+```
+
+Replace the placeholders with the database connection details. For production GitOps, manage secrets with a secret-management integration such as External Secrets Operator or Sealed Secrets rather than committing a plain Kubernetes Secret.
+
+### 2. Build and publish the container image
+
+Build an image, tag it with a version, authenticate to GitHub Container Registry (GHCR), and push it:
+
+```sh
+docker build -t ghcr.io/bsmahi/spring-boot-app-with-postgres:v1 .
+docker login ghcr.io -u <github-username>
+docker push ghcr.io/bsmahi/spring-boot-app-with-postgres:v1
+```
+
+When Docker prompts for a password, provide a GitHub **classic personal access token** with `write:packages`. Do not put the token in the command, source code, or Git. The Kubernetes Deployment currently references this image tag. If the GHCR package is private, configure an image-pull Secret in the workload namespace and add its name under `spec.template.spec.imagePullSecrets` in `k8s/app.yaml`; otherwise, make the package readable by the cluster.
+
+### 3. Install Argo CD
+
+Install Argo CD once in the cluster:
+
+```sh
+kubectl create namespace argocd
+kubectl apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl -n argocd get pods
+```
+
+Wait until the Argo CD pods are ready. To open the UI locally, port-forward the server. Use a local port other than 8080 if the application or another process already uses it:
+
+```sh
+kubectl -n argocd port-forward svc/argocd-server 8081:443
+```
+
+Open `https://localhost:8081` and sign in as `admin`. Retrieve the initial password in another terminal:
+
+```sh
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+```
+
+Change the initial password after the first login. The Argo CD CLI is optional; install it with `brew install argocd`, then log in using `argocd login localhost:8081 --username admin --insecure`.
+
+### 4. Add the application to Argo CD
+
+The Application manifest points at this public Git repository, uses the `master` branch, and tells Argo CD to deploy the `k8s/` directory into the application namespace. Ensure your latest image tag and Kubernetes manifests are committed and pushed to `master`, then bootstrap the Argo CD Application:
+
+```sh
+git add k8s/app.yaml argocd/application.yaml
+git commit -m "Add Kubernetes deployment manifests"
+git push origin master
+
+kubectl apply -f argocd/application.yaml
+```
+
+For a private Git repository, first configure repository credentials in Argo CD. The Application has automated sync enabled, so Argo CD will create/update the Deployment and Service after it can read the repository. You can also trigger a manual sync in the Argo CD UI or with `argocd app sync spring-boot-app-with-postgres`.
+
+### 5. Verify the deployment
+
+Check Argo CD's sync and health status, then inspect the Kubernetes resources:
+
+```sh
+kubectl -n argocd get application spring-boot-app-with-postgres
+kubectl -n spring-boot-app-with-postgres get pods,svc
+kubectl -n spring-boot-app-with-postgres rollout status \
+  deployment/spring-boot-app-with-postgres
+```
+
+The Deployment uses the `spring-db` Secret and readiness/liveness health probes. If pods fail to start, inspect their events and logs:
+
+```sh
+kubectl -n spring-boot-app-with-postgres describe pods
+kubectl -n spring-boot-app-with-postgres logs \
+  deployment/spring-boot-app-with-postgres
+```
+
+To try the API from your machine, forward the Service to a free local port:
+
+```sh
+kubectl -n spring-boot-app-with-postgres port-forward \
+  svc/spring-boot-app-with-postgres 8082:80
+```
+
+Then visit `http://localhost:8082/api/courses` or `http://localhost:8082/api/albums`.
+
+### 6. Deploy a new application version
+
+Build and push a new immutable image tag (for example, `v2`), update the `image` value in `k8s/app.yaml` to that tag, and push the change to `master`. Argo CD detects the Git change and rolls out the new version. Pushing an image alone does not change the Deployment; Git remains the desired state.
