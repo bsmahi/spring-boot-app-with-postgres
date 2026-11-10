@@ -59,9 +59,10 @@ The datasource is PostgreSQL. The application uses the `app` schema and Hibernat
 ```properties
 spring.datasource.url=jdbc:postgresql://<pooler-host>:5432/postgres
 spring.datasource.username=postgres.<project-ref>
+spring.datasource.hikari.maximum-pool-size=1
+spring.datasource.hikari.minimum-idle=0
 spring.datasource.password=<password>
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.properties.hibernate.default_schema=app
 # Hibernate ddl auto (create, create-drop, validate, update)
 spring.jpa.hibernate.ddl-auto=update
@@ -93,6 +94,8 @@ Use local PostgreSQL instead when you need fully offline development or want to 
 3. Create the project and wait for its database to finish provisioning. Supabase creates a PostgreSQL database with a default `postgres` database.
 4. In the project dashboard, select **Connect**. For local development on an IPv4 network, choose **Session pooler** and copy its connection details. The session pooler is suitable for this long-running Spring Boot application when a direct IPv6 connection is unavailable. Use the host, port, database name, and username exactly as shown; pooled usernames include the project reference.
 
+The session pooler has a finite client limit shared across applications. This project caps HikariCP at one connection per application instance and does not keep an idle connection open. If the pooler is already full, stop duplicate or previously launched app processes and other clients, then retry after their sessions close. The application cannot reclaim connections held by other clients.
+
 ![Supabase connection pooling illustration from the official documentation](https://supabase.com/docs/img/guides/database/connecting-to-postgres/how-connection-pooling-works.png)
 
 ```sh
@@ -106,7 +109,7 @@ Set these environment variables in the same shell before launching the applicati
 
 ### Create the application tables
 
-This project stores its tables in the PostgreSQL schema `app`. In the Supabase dashboard, open **SQL Editor**, create a query, paste the contents of [`src/main/resources/schema.sql`](src/main/resources/schema.sql), and run it. To add the sample records, run [`src/main/resources/data.sql`](src/main/resources/data.sql) afterward. These scripts create the tables and sequence and can be run again safely.
+This project stores its tables in the PostgreSQL schema `app`. Spring Boot runs [`src/main/resources/schema.sql`](src/main/resources/schema.sql) at startup (`spring.sql.init.mode=always`), before Hibernate initializes, creating the schema, tables, sequence, and sample records. The script is safe to rerun. If the database user cannot create schemas, run the script in the Supabase SQL Editor with a privileged role first.
 
 The resulting table structure is shown below:
 

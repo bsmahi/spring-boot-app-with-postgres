@@ -1,25 +1,41 @@
-version: '3.8'
 
 services:
+
   course-app:
     image: spring-boot-app-with-postgres-image
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - $SPRING_LOCAL_PORT:$SPRING_DOCKER_PORT
+      - "${SPRING_LOCAL_PORT}:${SPRING_DOCKER_PORT}"
     depends_on:
       - postgres_db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/$POSTGRES_DB
-      SPRING_DATASOURCE_USERNAME: $POSTGRES_USER
-      SPRING_DATASOURCE_PASSWORD: $POSTGRES_PASSWORD
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
   postgres_db:
     image: postgres:15-alpine
-    env_file: ./.env
+    env_file:
+      - ./.env
     environment:
-      POSTGRES_USER: $POSTGRES_USER
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - $POSTGRES_DB_LOCAL_PORT:$POSTGRES_DB_DOCKER_PORT
+      - "${POSTGRES_DB_LOCAL_PORT}:${POSTGRES_DB_DOCKER_PORT}"
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    ports:
+      - "4180:4180"
+    volumes:
+      - ./oauth2-proxy/oauth2-proxy.cfg:/etc/oauth2-proxy.cfg:ro
+    env_file:
+      - ./oauth2-proxy/.env
+    command:
+      - --config=/etc/oauth2-proxy.cfg
+    depends_on:
+      - course-app

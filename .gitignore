@@ -33,3 +33,4 @@ build/
 .vscode/
 # Local configuration files
 /src/main/resources/application-local.properties
+oauth2-proxy/.env
